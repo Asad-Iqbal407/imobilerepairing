@@ -22,13 +22,16 @@ export async function initDatabase() {
   for (const { name, model } of models) {
     try {
       // Check if collection exists
-      const stats = await model.collection.stats().catch(() => null);
-      if (!stats) {
-        console.log(`Creating collection for ${name}...`);
-        await model.createCollection();
-        console.log(`Collection for ${name} created successfully.`);
-      } else {
-        console.log(`Collection for ${name} already exists.`);
+      const db = model.db.db;
+      if (db) {
+        const collections = await db.listCollections({ name: model.collection.name }).toArray();
+        if (collections.length === 0) {
+          console.log(`Creating collection for ${name}...`);
+          await model.createCollection();
+          console.log(`Collection for ${name} created successfully.`);
+        } else {
+          console.log(`Collection for ${name} already exists.`);
+        }
       }
     } catch (error) {
       console.error(`Error initializing collection for ${name}:`, error);

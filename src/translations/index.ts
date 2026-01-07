@@ -255,7 +255,6 @@ export const pt = {
     reviewSuccess: "Obrigado pela sua avaliação!",
     reviewError: "Falha ao enviar avaliação. Por favor, tente novamente.",
     noReviews: "Ainda não há avaliações. Seja o primeiro a avaliar!",
-    viewAllReviews: "Ver Todas as Avaliações",
   },
   services: {
     title: "Nossos Serviços",

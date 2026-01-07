@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import dbConnect from '@/lib/db';
 import Quote from '@/models/Quote';
@@ -11,9 +11,11 @@ export async function GET() {
     
     // Check if collection exists
     try {
-      const collections = await mongoose.connection.db.listCollections({ name: 'quotes' }).toArray();
-      if (collections.length === 0) {
-        await Quote.createCollection();
+      if (mongoose.connection.db) {
+        const collections = await mongoose.connection.db.listCollections({ name: 'quotes' }).toArray();
+        if (collections.length === 0) {
+          await Quote.createCollection();
+        }
       }
     } catch (e) {
       console.error('Quote collection check error:', e);
