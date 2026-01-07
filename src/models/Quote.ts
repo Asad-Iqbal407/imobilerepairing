@@ -10,6 +10,8 @@ export interface IQuote extends Document {
   phone: string;
   images: string[];
   status: 'pending' | 'responded' | 'completed';
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const QuoteSchema: Schema = new Schema({

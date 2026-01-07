@@ -15,6 +15,8 @@ export interface IOrder extends Document {
   items: IOrderItem[];
   total: number;
   status: 'pending' | 'paid' | 'confirmed' | 'shipped' | 'cancelled';
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const OrderItemSchema: Schema = new Schema({

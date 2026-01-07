@@ -5,6 +5,8 @@ export interface IService extends Document {
   description: string;
   price: number;
   image: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const ServiceSchema: Schema = new Schema({
