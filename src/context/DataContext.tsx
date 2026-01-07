@@ -44,6 +44,7 @@ interface DataContextType {
   services: Service[];
   products: Product[];
   reviews: Review[];
+  isLoading: boolean;
   addService: (service: Service) => void;
   updateService: (service: Service) => void;
   deleteService: (id: string) => void;
@@ -60,10 +61,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [services, setServices] = useState<Service[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Fetch data from API
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
       try {
         const [servicesRes, productsRes, reviewsRes] = await Promise.all([
           fetch('/api/services'),
@@ -73,22 +76,31 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
         if (servicesRes.ok) {
           const servicesData = await servicesRes.json();
-          setServices(servicesData.map((s: any) => ({ ...s, id: s._id })));
+          setServices(servicesData.map((s: any, index: number) => ({ 
+            ...s, 
+            id: s._id || s.id || `service-${index}-${Date.now()}` 
+          })));
         }
 
         if (productsRes.ok) {
           const productsData = await productsRes.json();
-          setProducts(productsData.map((p: any) => ({ ...p, id: p._id })));
-        } else {
-          console.error('DataContext: Failed to fetch products');
+          setProducts(productsData.map((p: any, index: number) => ({ 
+            ...p, 
+            id: p._id || p.id || `product-${index}-${Date.now()}` 
+          })));
         }
 
         if (reviewsRes.ok) {
           const reviewsData = await reviewsRes.json();
-          setReviews(reviewsData.map((r: any) => ({ ...r, id: r._id })));
+          setReviews(reviewsData.map((r: any, index: number) => ({ 
+            ...r, 
+            id: r._id || r.id || `review-${index}-${Date.now()}` 
+          })));
         }
       } catch (error) {
-        console.error('Failed to fetch data:', error);
+        console.error('DataContext: Failed to fetch data, some sections might show fallback content:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -227,15 +239,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <DataContext.Provider value={{
-      services,
-      products,
-      reviews,
-      addService,
-      updateService,
-      deleteService,
-      addProduct,
-      updateProduct,
+    <DataContext.Provider value={{ 
+      services, 
+      products, 
+      reviews, 
+      isLoading,
+      addService, 
+      updateService, 
+      deleteService, 
+      addProduct, 
+      updateProduct, 
       deleteProduct,
       addReview,
       deleteReview

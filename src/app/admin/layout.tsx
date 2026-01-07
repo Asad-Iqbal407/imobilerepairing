@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { Toaster, toast } from 'sonner';
+
 const navItems = [
   {
     name: 'Dashboard',
@@ -91,6 +93,75 @@ export default function AdminLayout({
     }
   }, [pathname, router]);
 
+  // Polling for new notifications
+  useEffect(() => {
+    if (!isAuthenticated || pathname === '/admin/login') return;
+
+    let lastOrderTime = new Date().toISOString();
+    let lastQuoteTime = new Date().toISOString();
+    let lastMessageTime = new Date().toISOString();
+
+    const checkNewActivity = async () => {
+      try {
+        const [ordersRes, quotesRes, messagesRes] = await Promise.all([
+          fetch('/api/orders'),
+          fetch('/api/quotes'),
+          fetch('/api/contact')
+        ]);
+
+        if (ordersRes.ok) {
+          const orders = await ordersRes.json();
+          const newOrders = orders.filter((o: any) => o.createdAt > lastOrderTime && o.status === 'paid');
+          newOrders.forEach((o: any) => {
+            toast.success(`New Order #${o._id.slice(-6)}`, {
+              description: `Customer: ${o.customerName} - $${o.total}`,
+              action: {
+                label: 'View',
+                onClick: () => router.push('/admin/orders')
+              }
+            });
+          });
+          if (orders.length > 0) lastOrderTime = orders[0].createdAt;
+        }
+
+        if (quotesRes.ok) {
+          const quotes = await quotesRes.json();
+          const newQuotes = quotes.filter((q: any) => q.createdAt > lastQuoteTime);
+          newQuotes.forEach((q: any) => {
+            toast.info(`New Quote Request`, {
+              description: `${q.name} - ${q.service}`,
+              action: {
+                label: 'View',
+                onClick: () => router.push('/admin/quotes')
+              }
+            });
+          });
+          if (quotes.length > 0) lastQuoteTime = quotes[0].createdAt;
+        }
+
+        if (messagesRes.ok) {
+          const messages = await messagesRes.json();
+          const newMessages = messages.filter((m: any) => m.createdAt > lastMessageTime);
+          newMessages.forEach((m: any) => {
+            toast.message(`New Customer Message`, {
+              description: `From: ${m.name}`,
+              action: {
+                label: 'Read',
+                onClick: () => router.push('/admin/messages')
+              }
+            });
+          });
+          if (messages.length > 0) lastMessageTime = messages[0].createdAt;
+        }
+      } catch (error) {
+        console.error('Failed to check for notifications:', error);
+      }
+    };
+
+    const interval = setInterval(checkNewActivity, 30000); // Check every 30 seconds
+    return () => clearInterval(interval);
+  }, [isAuthenticated, pathname, router]);
+
   const handleLogout = () => {
     localStorage.removeItem('is_admin_authenticated');
     router.push('/admin/login');
@@ -116,6 +187,7 @@ export default function AdminLayout({
 
   return (
     <div className="flex min-h-screen bg-slate-50">
+      <Toaster position="top-right" richColors />
       {/* Sidebar */}
       <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col fixed inset-y-0 shadow-xl z-50">
         <div className="p-6 flex items-center gap-3 border-b border-slate-800">

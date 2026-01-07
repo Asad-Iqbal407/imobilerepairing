@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { CameraIcon, XMarkIcon, PhotoIcon, DevicePhoneMobileIcon, ComputerDesktopIcon, ClockIcon, DeviceTabletIcon, SquaresPlusIcon } from '@heroicons/react/24/outline';
 import { useSearchParams } from 'next/navigation';
+import { isValidEmail } from '@/lib/utils';
 
 function QuoteForm() {
   const { t } = useLanguage();
@@ -21,6 +22,7 @@ function QuoteForm() {
   const [previews, setPreviews] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [emailError, setEmailError] = useState('');
 
   useEffect(() => {
     const service = searchParams.get('service');
@@ -72,6 +74,13 @@ function QuoteForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isValidEmail(formData.email)) {
+      setEmailError('Please enter a valid email address.');
+      // Scroll to email field or just let the user see the error
+      return;
+    }
+
     setIsSubmitting(true);
     setMessage(null);
 
@@ -336,10 +345,14 @@ function QuoteForm() {
                         type="email"
                         id="email"
                         required
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 outline-none bg-gray-50"
+                        className={`w-full px-4 py-3 rounded-xl border ${emailError ? 'border-red-500' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 outline-none bg-gray-50`}
                         value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, email: e.target.value });
+                          if (emailError) setEmailError('');
+                        }}
                       />
+                      {emailError && <p className="mt-1 text-xs text-red-600 font-bold">{emailError}</p>}
                     </div>
                   </div>
                   <div>

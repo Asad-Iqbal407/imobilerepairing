@@ -3,8 +3,8 @@ import dbConnect from '@/lib/db';
 import Contact from '@/models/Contact';
 
 export async function GET() {
-  await dbConnect();
   try {
+    await dbConnect();
     const contacts = await Contact.find({}).sort({ createdAt: -1 });
     return NextResponse.json(contacts);
   } catch (error: any) {
@@ -14,8 +14,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  await dbConnect();
   try {
+    await dbConnect();
     const body = await request.json();
     const contact = await Contact.create(body);
     return NextResponse.json(contact, { status: 201 });

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useData } from '@/context/DataContext';
 import { useLanguage } from '@/context/LanguageContext';
+import DynamicText from '@/components/DynamicText';
 
 export default function ReviewSection() {
   const { reviews, addReview } = useData();
@@ -162,9 +163,9 @@ export default function ReviewSection() {
         {/* Reviews List */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10">
           {featuredReviews.length > 0 ? (
-            featuredReviews.map((review) => (
+            featuredReviews.map((review, i) => (
               <div
-                key={review.id}
+                key={review.id || `review-featured-${i}`}
                 className="bg-white p-8 rounded-[2.5rem] shadow-sm hover:shadow-2xl transition-all duration-500 border border-slate-100 group hover:-translate-y-2"
               >
                 <div className="flex items-center gap-4 mb-6">
@@ -180,7 +181,7 @@ export default function ReviewSection() {
                   {renderStars(review.rating)}
                 </div>
                 <p className="text-slate-600 leading-relaxed text-lg italic">
-                  "{review.comment}"
+                  "<DynamicText text={review.comment} />"
                 </p>
               </div>
             ))
@@ -235,9 +236,9 @@ export default function ReviewSection() {
               {/* Modal Content - Scrollable Grid */}
               <div className="flex-1 overflow-y-auto p-8 md:p-12 custom-scrollbar">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                  {reviews.map((review) => (
+                  {reviews.map((review, i) => (
                     <div
-                      key={review.id}
+                      key={review.id || `review-all-${i}`}
                       className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col"
                     >
                       <div className="flex items-center gap-4 mb-6">

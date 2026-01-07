@@ -115,6 +115,10 @@ export default function AdminDashboard() {
     };
 
     fetchStats();
+    
+    // Poll for updates every 30 seconds
+    const interval = setInterval(fetchStats, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const statCards = [

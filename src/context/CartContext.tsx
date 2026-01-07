@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useLanguage } from './LanguageContext';
+import { toast } from 'sonner';
 
 export interface CartItem {
   id: string;
@@ -49,12 +50,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
       return [...prevItems, { ...newItem, quantity: 1 }];
     });
-    alert(t.cart.addedToCart);
+    toast.success(t.cart.addedToCart);
   }, [t.cart.addedToCart]);
 
   const removeFromCart = useCallback((id: string) => {
-    setItems((prevItems) => prevItems.filter((item) => item.id !== id));
-  }, []);
+    setItems((prevItems) => {
+      const filtered = prevItems.filter((item) => item.id !== id);
+      if (filtered.length !== prevItems.length) {
+        toast.info(t.cart.removedFromCart || 'Item removed from cart');
+      }
+      return filtered;
+    });
+  }, [t.cart.removedFromCart]);
 
   const clearCart = useCallback(() => {
     setItems([]);

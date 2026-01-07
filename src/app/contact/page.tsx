@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
+import { isValidEmail } from '@/lib/utils';
 
 export default function Contact() {
   const { t } = useLanguage();
@@ -13,15 +14,32 @@ export default function Contact() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [emailError, setEmailError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!isValidEmail(formData.email)) {
+      setEmailError('Please enter a valid email address.');
+      return;
+    }
+
     setIsSubmitting(true);
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      if (res.ok) {
+        setSubmitted(true);
+        setFormData({ name: '', email: '', phone: '', message: '' });
+      }
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    }
     setIsSubmitting(false);
-    setSubmitted(true);
-    setFormData({ name: '', email: '', phone: '', message: '' });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -160,10 +178,14 @@ export default function Contact() {
                           name="email"
                           required
                           value={formData.email}
-                          onChange={handleChange}
+                          onChange={(e) => {
+                            handleChange(e);
+                            if (emailError) setEmailError('');
+                          }}
                           placeholder="your@email.com"
-                          className="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 outline-none bg-slate-50 font-medium"
+                          className={`w-full px-5 py-4 rounded-2xl border ${emailError ? 'border-red-500' : 'border-slate-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 outline-none bg-slate-50 font-medium`}
                         />
+                        {emailError && <p className="mt-2 text-sm text-red-600 font-bold">{emailError}</p>}
                       </div>
                     </div>
                     <div>

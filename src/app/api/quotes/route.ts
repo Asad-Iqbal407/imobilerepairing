@@ -31,8 +31,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  await dbConnect();
   try {
+    await dbConnect();
     const body = await request.json();
     const quote = await Quote.create(body);
     return NextResponse.json(quote, { status: 201 });
