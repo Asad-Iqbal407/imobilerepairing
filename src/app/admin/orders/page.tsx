@@ -321,7 +321,7 @@ export default function OrdersPage() {
                   {['pending', 'processing', 'shipped', 'delivered'].map((status) => (
                     <button
                       key={status}
-                      onClick={() => handleUpdateStatus(selectedOrder._id as string, status)}
+                      onClick={() => handleUpdateStatus(selectedOrder._id.toString(), status)}
                       className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border ${
                         selectedOrder.status === status
                           ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20'
@@ -409,7 +409,7 @@ export default function OrdersPage() {
 
             <div className="p-6 border-t border-slate-100 bg-slate-50">
               <button
-                onClick={() => handleDelete(selectedOrder._id as string)}
+                onClick={() => handleDelete(selectedOrder._id.toString())}
                 className="w-full py-3 px-4 bg-white border border-rose-200 text-rose-600 rounded-xl font-bold hover:bg-rose-50 transition-all flex items-center justify-center gap-2"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
