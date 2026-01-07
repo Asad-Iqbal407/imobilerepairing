@@ -54,7 +54,7 @@ export default function MessagesPage() {
   const totalMessages = messages.length;
   const todayMessages = messages.filter(m => {
     const today = new Date();
-    const messageDate = new Date(m.createdAt as string);
+    const messageDate = new Date(m.createdAt as any);
     return messageDate.toDateString() === today.toDateString();
   }).length;
   const deviceInquiries = messages.filter(m => m.device).length;
