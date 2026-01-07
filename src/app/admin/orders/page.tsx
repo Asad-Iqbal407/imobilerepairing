@@ -49,7 +49,7 @@ export default function OrdersPage() {
   const totalOrders = orders.length;
   const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
   const pendingOrders = orders.filter(o => o.status === 'pending').length;
-  const completedOrders = orders.filter(o => o.status === 'delivered').length;
+  const completedOrders = orders.filter(o => o.status === 'confirmed').length;
 
   const handleUpdateStatus = async (id: string, status: string) => {
     try {
@@ -177,7 +177,7 @@ export default function OrdersPage() {
           />
         </div>
         <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto">
-          {['All', 'pending', 'processing', 'shipped', 'delivered'].map((status) => (
+          {['All', 'pending', 'paid', 'confirmed', 'shipped', 'cancelled'].map((status) => (
             <button
               key={status}
               onClick={() => setSelectedStatus(status)}
@@ -241,9 +241,11 @@ export default function OrdersPage() {
                   <td className="px-6 py-4 text-center">
                     <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold ${
                       order.status === 'pending' ? 'bg-amber-50 text-amber-700' :
-                      order.status === 'processing' ? 'bg-blue-50 text-blue-700' :
+                      order.status === 'paid' ? 'bg-blue-50 text-blue-700' :
                       order.status === 'shipped' ? 'bg-purple-50 text-purple-700' :
-                      'bg-emerald-50 text-emerald-700'
+                      order.status === 'confirmed' ? 'bg-emerald-50 text-emerald-700' :
+                      order.status === 'cancelled' ? 'bg-rose-50 text-rose-700' :
+                      'bg-slate-50 text-slate-700'
                     }`}>
                       {order.status}
                     </span>
@@ -318,7 +320,7 @@ export default function OrdersPage() {
               <div className="space-y-3">
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block">Order Fulfillment</span>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {['pending', 'processing', 'shipped', 'delivered'].map((status) => (
+                  {['pending', 'paid', 'confirmed', 'shipped', 'cancelled'].map((status) => (
                     <button
                       key={status}
                       onClick={() => handleUpdateStatus(selectedOrder._id.toString(), status)}
@@ -409,7 +411,7 @@ export default function OrdersPage() {
 
             <div className="p-6 border-t border-slate-100 bg-slate-50">
               <button
-                onClick={() => handleDelete(selectedOrder._id.toString())}
+                onClick={() => handleDelete(selectedOrder._id as string)}
                 className="w-full py-3 px-4 bg-white border border-rose-200 text-rose-600 rounded-xl font-bold hover:bg-rose-50 transition-all flex items-center justify-center gap-2"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -424,4 +426,3 @@ export default function OrdersPage() {
     </div>
   );
 }
-
