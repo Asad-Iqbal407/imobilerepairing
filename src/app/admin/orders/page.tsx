@@ -60,7 +60,7 @@ export default function OrdersPage() {
       });
       if (res.ok) {
         fetchOrders();
-        if (selectedOrder?._id === id) {
+        if (selectedOrder?._id?.toString() === id) {
           setSelectedOrder({ ...selectedOrder, status } as IOrder);
         }
       }

@@ -55,7 +55,7 @@ export default function QuotesPage() {
       });
       if (res.ok) {
         fetchQuotes();
-        if (selectedQuote?._id === id) {
+        if (selectedQuote?._id?.toString() === id) {
           setSelectedQuote({ ...selectedQuote, status } as IQuote);
         }
       }
