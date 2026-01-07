@@ -1,0 +1,39 @@
+import dbConnect from './db';
+import Contact from '../models/Contact';
+import Order from '../models/Order';
+import Product from '../models/Product';
+import Quote from '../models/Quote';
+import Review from '../models/Review';
+import Service from '../models/Service';
+
+export async function initDatabase() {
+  await dbConnect();
+  const models = [
+    { name: 'Contact', model: Contact },
+    { name: 'Order', model: Order },
+    { name: 'Product', model: Product },
+    { name: 'Quote', model: Quote },
+    { name: 'Review', model: Review },
+    { name: 'Service', model: Service },
+  ];
+
+  console.log('Initializing database collections...');
+
+  for (const { name, model } of models) {
+    try {
+      // Check if collection exists
+      const stats = await model.collection.stats().catch(() => null);
+      if (!stats) {
+        console.log(`Creating collection for ${name}...`);
+        await model.createCollection();
+        console.log(`Collection for ${name} created successfully.`);
+      } else {
+        console.log(`Collection for ${name} already exists.`);
+      }
+    } catch (error) {
+      console.error(`Error initializing collection for ${name}:`, error);
+    }
+  }
+
+  console.log('Database initialization complete.');
+}

@@ -1,0 +1,529 @@
+"use client";
+
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { useData, Product } from '@/context/DataContext';
+
+export default function ManageProducts() {
+  const { products, addProduct, updateProduct, deleteProduct } = useData();
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [currentProduct, setCurrentProduct] = useState<Product>({
+    id: '',
+    name: '',
+    category: 'New Phones',
+    price: 0,
+    image: '',
+    description: '',
+  });
+
+  // Simulate loading state for consistency with other pages
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const categories = [
+    { id: 'All', label: 'All', icon: '🏷️' },
+    { id: 'New Phones', label: 'New Phones', icon: '📱' },
+    { id: 'Refurbished Phones', label: 'Refurbished Phones', icon: '🔄' },
+    { id: '2nd Hand Phones', label: '2nd Hand Phones', icon: '🤝' },
+    { id: 'Tablets', label: 'Tablets', icon: '📟' },
+    { id: 'Cables', label: 'Cables', icon: '🔌' },
+    { id: 'Chargers', label: 'Chargers', icon: '⚡' },
+    { id: 'Powerbanks', label: 'Powerbanks', icon: '🔋' },
+    { id: 'Earbuds', label: 'Earbuds', icon: '🎧' },
+    { id: 'Adapters', label: 'Adapters', icon: '🔌' },
+    { id: 'Speakers', label: 'Speakers', icon: '🔊' },
+    { id: 'Cases', label: 'Cases', icon: '📱' },
+    { id: 'Other', label: 'Other', icon: '📦' }
+  ];
+
+  const isValidUrl = (url: string) => {
+    try {
+      if (!url || typeof url !== 'string') return false;
+      if (url.startsWith('/uploads/')) return true;
+      if (!url.startsWith('http') && !url.startsWith('/')) return false;
+      new URL(url.startsWith('http') ? url : `http://localhost${url}`);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         product.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === 'All' || product.category?.trim().toLowerCase() === selectedCategory.trim().toLowerCase();
+    return matchesSearch && matchesCategory;
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (isEditing) {
+        await updateProduct(currentProduct);
+      } else {
+        await addProduct({ ...currentProduct, id: Date.now().toString() });
+      }
+      resetForm();
+      setIsFormOpen(false);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      alert('Failed to save product. Please try again.');
+    }
+  };
+
+  const handleEdit = (product: Product) => {
+    setCurrentProduct({
+      id: product.id || '',
+      name: product.name || '',
+      category: product.category || 'New Phones',
+      price: product.price || 0,
+      image: product.image || '',
+      description: product.description || '',
+    });
+    setIsEditing(true);
+    setIsFormOpen(true);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('Upload failed');
+
+      const data = await response.json();
+      setCurrentProduct({ ...currentProduct, image: data.url });
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm('Are you sure you want to delete this product?')) {
+      deleteProduct(id);
+    }
+  };
+
+  const resetForm = () => {
+    setCurrentProduct({
+      id: '',
+      name: '',
+      category: 'New Phones',
+      price: 0,
+      image: '',
+      description: '',
+    });
+    setIsEditing(false);
+  };
+
+  const totalProducts = products.length;
+  const totalValue = products.reduce((sum, p) => sum + p.price, 0);
+  const categoriesCount = products.reduce((acc, p) => {
+    acc[p.category] = (acc[p.category] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">Manage Products</h1>
+          <p className="text-slate-500 mt-1">Manage your inventory of phones, tablets, and accessories.</p>
+        </div>
+        <button
+          onClick={() => {
+            resetForm();
+            setIsFormOpen(true);
+          }}
+          className="px-4 py-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
+          Add New Product
+        </button>
+      </div>
+
+      {/* Stats Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Total Products</p>
+              <p className="text-2xl font-bold text-slate-900">{totalProducts}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Inventory Value</p>
+              <p className="text-2xl font-bold text-slate-900">${totalValue.toLocaleString()}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Phones & Tablets</p>
+              <p className="text-2xl font-bold text-slate-900">
+                {(categoriesCount['New Phones'] || 0) + (categoriesCount['Refurbished Phones'] || 0) + (categoriesCount['2nd Hand Phones'] || 0) + (categoriesCount['Tablets'] || 0)}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 011-1h1a2 2 0 100-4H7a1 1 0 01-1-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">All Accessories</p>
+              <p className="text-2xl font-bold text-slate-900">
+                {(categoriesCount['Cables'] || 0) + 
+                 (categoriesCount['Chargers'] || 0) + 
+                 (categoriesCount['Powerbanks'] || 0) + 
+                 (categoriesCount['Earbuds'] || 0) + 
+                 (categoriesCount['Adapters'] || 0) + 
+                 (categoriesCount['Speakers'] || 0) + 
+                 (categoriesCount['Cases'] || 0) +
+                 (categoriesCount['Other'] || 0)}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters and Search */}
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+        <div className="relative w-full md:w-96">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search products..."
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-900 font-medium"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => setSelectedCategory(category.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
+                selectedCategory === category.id
+                  ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20'
+                  : 'bg-white border-slate-200 text-slate-500 hover:border-blue-200 hover:text-blue-600'
+              }`}
+            >
+              <span>{category.icon}</span>
+              {category.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Products Table */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-100">
+                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Product</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Category</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest text-center">Price</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredProducts.map((product) => (
+                <tr key={product.id} className="hover:bg-slate-50 transition-colors group">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-slate-50 rounded-xl overflow-hidden shadow-inner border border-slate-100 flex items-center justify-center relative">
+                        {product.image ? (
+                          <Image 
+                            src={isValidUrl(product.image) ? product.image : "https://images.unsplash.com/photo-1560393464-5c69a73c5770?q=80&w=1000&auto=format&fit=crop"} 
+                            alt={product.name} 
+                            fill 
+                            className="object-cover" 
+                          />
+                        ) : (
+                          <span className="text-2xl">📦</span>
+                        )}
+                      </div>
+                      <div>
+                        <span className="font-bold text-slate-900 block">{product.name}</span>
+                        <span className="text-slate-500 text-sm line-clamp-1 max-w-[200px]">{product.description}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold ${
+                      product.category.includes('Phone') ? 'bg-blue-50 text-blue-700' :
+                      product.category === 'Tablets' ? 'bg-purple-50 text-purple-700' :
+                      'bg-amber-50 text-amber-700'
+                    }`}>
+                      <span>{categories.find(c => c.id === product.category)?.icon || '📦'}</span>
+                      {product.category}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-bold bg-emerald-50 text-emerald-700">
+                      ${product.price}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => handleEdit(product)}
+                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                        title="Edit Product"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => handleDelete(product.id)}
+                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                        title="Delete Product"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {filteredProducts.length === 0 && (
+          <div className="text-center py-20">
+            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-slate-900">No products match your criteria</h3>
+            <p className="text-slate-500 max-w-xs mx-auto mt-2">Try adjusting your search or category filters to find what you're looking for.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Form Slide-over/Modal */}
+      {isFormOpen && (
+        <div className="fixed inset-0 z-[100] overflow-hidden">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={() => setIsFormOpen(false)} />
+          <div className="fixed inset-y-0 right-0 max-w-md w-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <h2 className="text-xl font-bold text-slate-900">{isEditing ? 'Edit Product' : 'Add New Product'}</h2>
+              <button onClick={() => setIsFormOpen(false)} className="p-2 hover:bg-slate-200 rounded-lg transition-all text-slate-400 hover:text-slate-600">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmit} id="product-form" className="flex-1 overflow-y-auto p-6 space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700 uppercase tracking-widest">Product Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. iPhone 15 Pro"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-900 font-medium"
+                  value={currentProduct.name || ''}
+                  onChange={(e) => setCurrentProduct({ ...currentProduct, name: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700 uppercase tracking-widest">Category</label>
+                  <select
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-900 font-medium appearance-none"
+                    value={currentProduct.category || 'New Phones'}
+                    onChange={(e) => setCurrentProduct({ ...currentProduct, category: e.target.value as any })}
+                  >
+                    {categories.filter(c => c.id !== 'All').map(category => (
+                      <option key={category.id} value={category.id}>
+                        {category.icon} {category.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700 uppercase tracking-widest">Product Image</label>
+                <div className="flex flex-col gap-4">
+                  {/* File Upload */}
+                  <div className="relative group">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      id="image-upload"
+                      disabled={isUploading}
+                    />
+                    <label
+                      htmlFor="image-upload"
+                      className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-2xl cursor-pointer transition-all ${
+                        isUploading 
+                          ? 'bg-slate-50 border-slate-200 cursor-not-allowed' 
+                          : 'bg-slate-50 border-slate-200 hover:border-blue-400 hover:bg-blue-50/30'
+                      }`}
+                    >
+                      {isUploading ? (
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                          <span className="text-sm font-medium text-slate-500">Uploading...</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-slate-400 group-hover:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          </svg>
+                          <span className="text-sm font-medium text-slate-500">Upload from local system</span>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                      <div className="w-full border-t border-slate-200"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-white text-slate-500">or use URL</span>
+                    </div>
+                  </div>
+
+                  {/* URL Input */}
+                  <input
+                    type="text"
+                    required
+                    placeholder="https://images.unsplash.com/..."
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-900 font-medium"
+                    value={currentProduct.image || ''}
+                    onChange={(e) => setCurrentProduct({ ...currentProduct, image: e.target.value })}
+                  />
+                </div>
+                {currentProduct.image && (
+                  <div className="mt-2 w-full h-48 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 flex items-center justify-center relative">
+                    <Image 
+                      src={isValidUrl(currentProduct.image) ? currentProduct.image : "https://images.unsplash.com/photo-1560393464-5c69a73c5770?q=80&w=1000&auto=format&fit=crop"} 
+                      alt="Preview" 
+                      fill 
+                      className="object-cover" 
+                    />
+                  </div>
+                )}
+              </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700 uppercase tracking-widest">Price ($)</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    step="0.01"
+                    className="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-900 font-bold"
+                    value={currentProduct.price || 0}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                      setCurrentProduct({ ...currentProduct, price: isNaN(val) ? 0 : val });
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700 uppercase tracking-widest">Description</label>
+                <textarea
+                  required
+                  rows={4}
+                  placeholder="Technical specs, condition, or other details..."
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-900 font-medium resize-none"
+                  value={currentProduct.description || ''}
+                  onChange={(e) => setCurrentProduct({ ...currentProduct, description: e.target.value })}
+                />
+              </div>
+            </form>
+
+            <div className="p-6 border-t border-slate-100 bg-slate-50 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsFormOpen(false)}
+                className="flex-1 py-3 px-4 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-white/80 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="product-form"
+                className="flex-[2] py-3 px-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+              >
+                {isEditing ? 'Save Changes' : 'Add Product'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
