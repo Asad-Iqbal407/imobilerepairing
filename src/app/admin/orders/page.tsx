@@ -304,7 +304,7 @@ export default function OrdersPage() {
             <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
               <div>
                 <h2 className="text-xl font-bold text-slate-900">Order Details</h2>
-                <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest font-bold">ID: {selectedOrder._id}</p>
+                <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest font-bold">ID: {selectedOrder._id.toString()}</p>
               </div>
               <button onClick={() => setIsDetailsOpen(false)} className="p-2 hover:bg-slate-200 rounded-lg transition-all text-slate-400 hover:text-slate-600">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
